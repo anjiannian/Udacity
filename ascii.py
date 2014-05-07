@@ -28,7 +28,7 @@ class Art(db.Model):
 class AsciiHandler(Handler):
 
     def write_art(self, title='', art='', error=''):
-        arts = db.GqlQuery('select * from Art order by desc')
+        arts = db.GqlQuery('select * from Art order by created desc')
         self.render('ascii.html', title=title, art=art, error=error, arts=arts)
 
     def get(self):
