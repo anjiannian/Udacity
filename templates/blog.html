@@ -1,0 +1,78 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+	"http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+	<head>
+		<title> Blog </title>
+	</head>
+
+    <style type='text/css'>
+        body {
+            font-family: sans-serif;
+            width: 800px;
+            margin: 0 auto;
+            padding: 10px;
+        }
+
+		h1 {
+			margin:	20px auto;
+			float: right;
+		}
+
+		h5 {
+			margin:	0 auto;
+			float: left;
+		}
+
+        hr {
+            margin: 20px auto;
+        }
+
+        .art + .art {
+            margin-top: 20px;
+        }
+
+        .art-title {
+            font-weight: bold;
+            font-size: 25px;
+        }
+
+        .art-body {
+            margin: 0;
+            font-size: 17px;
+        }
+        .art-time {
+            float: right;
+            font-size: 16px;
+        }
+    </style>
+
+	<body>
+
+		<h1> <a href='/blog'>It's good to share </a></h1>
+		<br>
+
+		<h5> <a href='/blog/newpost'>free to share </a></h5>
+		<br>
+		<h5> <a href='/blog/catalog'>catalog</a></h5>
+
+		<br>
+		<br>
+		<br>
+
+        {% for art in articles %}
+            <div class='art'>
+				<div class='art-title'><a href='/blog/{{art.key().id()}}'>{{art.title}}</a></div>
+				<hr>
+                <pre class='art-body'>{{art.article}}</pre>
+				<div class='art-time'>{{art.created.date()}}</div>
+            </div>
+        {% endfor %}
+
+
+		<hr>
+
+        <p> Go back to the <a href='/blog'>Blog</a> <a href='/'>MainPage</a></p>
+	</body>
+</html>
+

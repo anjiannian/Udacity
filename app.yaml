@@ -30,6 +30,12 @@ handlers:
 - url: /ascii
   script: ascii.app
 
+- url: /blog(/.*)*
+  script: blog.app
+
+- url: /products(/.*)*
+  script: bbb.app
+
 libraries:
 - name: webapp2
   version: "2.5.2"
