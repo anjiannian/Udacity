@@ -23,6 +23,12 @@ handlers:
 
 - url: /signup
   script: signup.application
+- url: /logout
+  script: signup.application
+- url: /login
+  script: signup.application
+- url: /welcome
+  script: signup.application
 
 - url: /welcome
   script: signup.application
@@ -32,9 +38,6 @@ handlers:
 
 - url: /blog(/.*)*
   script: blog.app
-
-- url: /products(/.*)*
-  script: bbb.app
 
 libraries:
 - name: webapp2

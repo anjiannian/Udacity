@@ -41,7 +41,7 @@ class AsciiHandler(Handler):
         if title and art:
             a = Art(title = title, art = art)
             a.put()
-            sleep(1)
+            sleep(0.1)
             self.redirect('/ascii')
         else:
             error = 'We need both title and art!'

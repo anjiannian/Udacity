@@ -5,117 +5,173 @@
 
 import webapp2
 import re
+import jinja2
+import os
+import authorisation as au
 
-html = '''
-<html>
-<head>
-    <title> SignUp </title>
-    <style type='text/css'>
-    body {font:12px/19px Arial, Helvetica, sans-serif; color:#666;}
-    input.inputbox{border:#999 1px solid; height:16px; width:120px;}
-    label{text-align:right; width:100px; float:left;}
-    </style>
-</head>
-<body>
-    <h1 style='color:gray'> SignUp </h1>
-<br>
-</form>
-
-<form method='post' action='/signup'>
-    <p><label>Username:</label>
-    <input name='username' class='inputbox' value='%(username)s'>
-    <span style='color:red'> %(username_error)s</span>
-    </p>
-    <p><label>Password:</label>
-    <input name='password' type='password' class='inputbox' value='%(password)s'>
-    <span style='color:red'> %(password_error)s</span>
-    </p>
-    <p><label>Verify Password:</label>
-    <input name='verify' type='paaswod' class='inputbox' value='%(verify)s'>
-    <span style='color:red'> %(verify_error)s</span>
-    </p>
-    <p><label>Email(Optional):</label>
-    <input name='email' class='inputbox' value='%(email)s'>
-    <span style='color:red'> %(email_error)s</span>
-    </p>
-    <input type='submit'>
-</form>
-<p> Go back to the <a href='/'>MainPage</a></p>
-</body>
-</html>
-'''
+from time import sleep
+from google.appengine.ext import db
 
 USER_RE = re.compile(r"^[a-zA-Z0-9_-]{3,20}$")
 PASSWORD_RE = re.compile(r"^.{3,20}$")
 EMAIL_RE = re.compile(r"^[\S]+@[\S]+\.[\S]+$")
 
-class MainHandler(webapp2.RequestHandler):
+template_dir = os.path.join(os.path.dirname(__file__),'templates')
+env = jinja2.Environment(loader=jinja2.FileSystemLoader(template_dir), autoescape=True)
 
-    def write_html(self, username='', password='', verify='', email='',
-            username_error='', password_error='', verify_error='', email_error=''):
-        self.response.write(html % {'username':username,
-                                        'password':password,
-                                        'verify':verify,
-                                        'email':email,
-                                        'username_error':username_error,
-                                        'password_error':password_error,
-                                        'email_error':email_error,
-                                        'verify_error':verify_error})
+class Handler(webapp2.RequestHandler):
+    def write(self, *a, **kw):
+        return self.response.write(*a, **kw)
+
+    def render_str(self, template, **params):
+            t = env.get_template(template)
+            return t.render(params)
+    def render(self, template, **kw):
+        self.write(self.render_str(template, **kw))
+
+class User(db.Model):
+    username = db.StringProperty(required = True)
+    password = db.StringProperty(required = True)
+    email = db.StringProperty()
+    created = db.DateTimeProperty(auto_now_add = True)
+
+class SignUpHandler(Handler):
+    params = dict(username =  '',
+                  password =  '',
+                  verify =  '',
+                  email =  '',
+                  username_error =  '',
+                  password_error =  '',
+                  email_error =  '',
+                  verify_error =  '')
 
     def valid_username(self, username):
         return USER_RE.match(username)
     def valid_password(self, password):
         return PASSWORD_RE.match(password)
     def valid_email(self, email):
-        return EMAIL_RE.match(email)
-
-    def getname(self):
-        return self.request.get('username')
+        if email == '' or EMAIL_RE.match(email):
+            return True
+        else:
+            return False
 
     def get(self):
-        self.write_html()
+        self.render('signup.html', **self.params)
 
     def post(self):
         username = self.request.get('username')
+        self.params['username'] = username
         password = self.request.get('password')
         verify = self.request.get('verify')
         email = self.request.get('email')
+        self.params['email'] = email
+        user = User.all()
+        user.filter('username =', username)
+        invalid_user = False
+        for q in user:
+            if q.username:
+                invalid_user = True
+            else:
+                invalid_user = False
+
 
         if not self.valid_username(username):
-            username_error = 'That is not a valid username'
+            self.params['username_error'] = 'That is not a valid username'
+        elif invalid_user:
+            self.params['username_error'] = 'This name has been taken'
         else:
-            username_error = ''
+            self.params['username_error'] = ''
 
-        if not self.valid_password(password):
-            password_error = 'That is not a valid password!'
+        if self.valid_password(password):
+            self.params['password_error'] = ''
         else:
-            password_error = ''
+            self.params['password_error'] = 'That is not a valid password!'
 
-        if verify != password:
-            verify_error = 'Your passwords did not match!'
+        if verify == password:
+            self.params['verify_error'] = ''
         else:
-            verify_error = ''
+            self.params['verify_error'] = 'Your passwords did not match!'
 
-        if email != '' and self.valid_email(email):
-            email_error = ''
+        if self.valid_email(email):
+            self.params['email_error'] = ''
         else:
-            email_error = 'That is not a valid email!'
+            self.params['email_error'] = 'That is not a valid email!'
 
-        if self.valid_username(username) and self.valid_password(password) and self.valid_email(email) and verify == password:
-            self.redirect('/welcome' + '?username=%s' % username)
+        if not invalid_user and self.valid_username(username) \
+            and self.valid_password(password) and self.valid_email(email) \
+            and verify == password:
+
+            pwhash = au.make_pw_hash(username, password)
+            new = User(username=username, password=pwhash, email=email)
+            new.put()
+            self.response.headers.add_header('Set-Cookie', 'user=%s; Path=/' % str(username))
+            self.response.headers.add_header('Set-Cookie', 'pw=%s; Path=/' % str(pwhash))
+            sleep(0.5)
+            self.redirect('/welcome')
         else:
-            self.write_html(username,password,verify,email,username_error,password_error,verify_error,email_error)
+            self.render('signup.html', **self.params)
+
+class LogInHandler(Handler):
+    params = dict(username =  '',
+                  password =  '',
+                  error = '')
+    def get(self):
+        username = self.request.cookies.get('user')
+        if not username:
+            self.render('login.html', **self.params)
+        else:
+            password = self.request.cookies.get('pw')
+
+            user = User.all()
+            user.filter('username =', username)
+            for u in user:
+                if password == u.password:
+                    self.redirect('/welcome')
+                else:
+                    self.params['error'] = '逗逼再见!'
+                    self.render('login.html', **self.params)
+
+    def post(self):
+        username = self.request.get('username')
+        self.params['username'] = username
+        password = self.request.get('password')
+        user = User.all()
+        user.filter('username =', username)
+        for u in user:
+            if au.valid_pw(username, password, u.password):
+                self.response.headers.add_header('Set-Cookie', 'user=%s; Path=/' % str(username))
+                self.response.headers.add_header('Set-Cookie', 'pw=%s; Path=/' % str(u.password))
+                sleep(0.5)
+                self.redirect('/welcome')
+            else:
+                self.params['error'] = 'Invalid Login!'
+                self.render('login.html', **self.params)
+
 
 
 class WelcomeHandler(webapp2.RequestHandler):
-
-
     def get(self):
-        username = self.request.get('username')
-        self.response.out.write('Welcome, %s' % username)
-    #    self.response.out.write("Welcom")
+        username = self.request.cookies.get('user')
+        if not username:
+            self.redirect('/signup')
+        else:
+            password = self.request.cookies.get('pw')
 
+            user = User.all()
+            user.filter('username =', username)
+            for u in user:
+                if password == u.password:
+                    self.response.out.write('Welcome, %s' % username)
+                else:
+                    self.response.write('逗逼再见!')
 
-application = webapp2.WSGIApplication([('/signup', MainHandler),
-                                       ('/welcome', WelcomeHandler)], debug=True)
+class LogOutHandler(Handler):
+    def get(self):
+        self.response.delete_cookie('user')
+        self.redirect('/signup')
+
+application = webapp2.WSGIApplication([('/signup', SignUpHandler),
+                                       ('/welcome', WelcomeHandler),
+                                       ('/login', LogInHandler),
+                                       ('/logout', LogOutHandler)], debug=True)
 

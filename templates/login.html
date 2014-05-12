@@ -1,0 +1,27 @@
+<html>
+<head>
+    <title> Login </title>
+    <style type='text/css'>
+		body {font:12px/19px Arial, Helvetica, sans-serif; color:#666;}
+		input.inputbox{border:#999 1px solid; height:16px; width:120px;}
+		label{text-align:right; width:60px; float:left;}
+    </style>
+</head>
+<body>
+    <h1 style='color:gray'> SignUp </h1>
+<br>
+
+<form method='post' action='/login'>
+    <p><label>Username:</label>
+    <input name='username' class='inputbox' value='{{username}}'>
+    </p>
+    <p><label>Password:</label>
+    <input name='password' type='password' class='inputbox' value='{{password}}'>
+    </p>
+    <div style='color:red'> {{error}}</div>
+    <input type='submit'>
+</form>
+<p> Go back to the <a href='/'>MainPage</a></p>
+</body>
+</html>
+

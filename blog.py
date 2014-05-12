@@ -27,7 +27,7 @@ class Post(db.Model):
 
 class BlogHandler(Handler):
     def get(self):
-        post = db.GqlQuery('select * from Post order by created desc limit 5')
+        post = db.GqlQuery('select * from Post order by created desc limit 10')
         self.render('blog.html', articles=post)
 
 class PostHandler(Handler):
@@ -42,25 +42,25 @@ class CatalogHandler(Handler):
 
 class NewPostHandler(Handler):
 
-    def write_art(self, title='', article='', error=''):
-        self.render('newpost.html', title=title, article=article, error=error)
+    def write_art(self, subject='', content='', error=''):
+        self.render('newpost.html', subject=subject, content=content, error=error)
 
     def get(self):
         self.write_art()
 
     def post(self):
-        title = self.request.get('title')
-        article = self.request.get('art')
+        subject = self.request.get('subject')
+        content = self.request.get('content')
 
-        if title and article:
-            a = Post(title = title, article = article)
+        if subject and content:
+            a = Post(title = subject, article = content)
             a.put()
             id = a.key().id()
             sleep(0.1)
             self.redirect('/blog/%d' % id, id)
         else:
             error = 'We need both title and article!'
-            self.write_art(title, article, error)
+            self.write_art(subject, content, error)
 
 
 app = webapp2.WSGIApplication([('/blog', BlogHandler),
