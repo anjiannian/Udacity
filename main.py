@@ -15,17 +15,13 @@
 # limitations under the License.
 #
 import webapp2
-import jinja2
-import os
+from gaeHandler import Handler
 
-template_dir = os.path.join(os.path.dirname(__file__),'templates')
-jinja2_env = jinja2.Environment(loader=jinja2.FileSystemLoader(template_dir), autoescape=True)
 
-class MainHandler(webapp2.RequestHandler):
+class MainPage(Handler):
     def get(self):
-        t = jinja2_env.get_template('mainpage.html')
-        self.response.out.write(t.render())
+        self.render('mainpage.html')
 
 
 app = webapp2.WSGIApplication([
-    ('/', MainHandler)], debug=True)
+    ('/', MainPage)], debug=True)

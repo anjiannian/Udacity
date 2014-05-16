@@ -21,22 +21,10 @@ handlers:
 - url: /hello
   script: helloworld.application
 
-- url: /signup
-  script: signup.application
-- url: /logout
-  script: signup.application
-- url: /login
-  script: signup.application
-- url: /welcome
-  script: signup.application
-
-- url: /welcome
-  script: signup.application
-
 - url: /ascii
   script: ascii.app
 
-- url: /blog(/.*)*
+- url: /blog(/.*)*(?:.json)?
   script: blog.app
 
 libraries:

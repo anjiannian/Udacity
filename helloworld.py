@@ -9,7 +9,8 @@ class MainPage(webapp2.RequestHandler):
 
     def get(self):
         self.response.headers['Content-Type'] = 'text/plain'
-        self.response.write('Hello, World!')
+        ip = self.request.remote_addr
+        self.response.write('Hello, World! %s' % ip)
 
 
 application = webapp2.WSGIApplication([
